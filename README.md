@@ -1,2 +1,2 @@
-# siwes-logbook-automation
-A web-based system for automating the manual SIWES logbook using geofencing, WebRTC, and offline-first support to improve supervision, attendance tracking, and record authenticity.
+This project is a web-based application designed to automate the traditional manual SIWES logbook used by students during industrial training. The system replaces paper-based log entries with a secure digital platform that supports location-based attendance verification through geofencing, real-time communication using WebRTC, and offline-first functionality to ensure usability in areas with poor internet connectivity.
+The aim of the project is to reduce falsification of SIWES records, improve monitoring by supervisors, and provide a more reliable and efficient logging system for students, institutions, and organizations.
