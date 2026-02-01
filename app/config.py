@@ -1,0 +1,166 @@
+"""Application configuration management.
+
+This module handles loading and validating environment variables and
+application settings using Pydantic for type safety and validation.
+"""
+
+import os
+from functools import lru_cache
+from typing import Optional
+
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment variables.
+    
+    All settings are loaded from environment variables or .env file.
+    Uses Pydantic for automatic validation and type conversion.
+    
+    Attributes:
+        database_url: PostgreSQL connection string for production.
+        database_url_dev: SQLite connection string for development.
+        secret_key: Secret key for session encryption and security.
+        session_lifetime_hours: Session expiration time in hours.
+        geofence_default_radius_meters: Default geofence radius.
+        geofence_tolerance_meters: GPS accuracy tolerance buffer.
+        daily_api_key: Daily.co API key for video/voice calls.
+        daily_domain: Daily.co domain for room creation.
+        debug: Enable debug mode (verbose logging, auto-reload).
+        host: Server bind address.
+        port: Server port number.
+        environment: Deployment environment (development/production).
+    
+    Example:
+        >>> settings = get_settings()
+        >>> print(settings.database_url)
+        postgresql://user:pass@localhost/siwes_db
+    """
+    
+    # Database
+    database_url: str = Field(
+        default="sqlite:///./siwes_dev.db",
+        description="PostgreSQL connection URL for production"
+    )
+    database_url_dev: str = Field(
+        default="sqlite:///./siwes_dev.db",
+        description="SQLite connection URL for development"
+    )
+    
+    # Security
+    secret_key: str = Field(
+        ...,
+        min_length=32,
+        description="Secret key for session encryption (min 32 chars)"
+    )
+    session_lifetime_hours: int = Field(
+        default=24,
+        ge=1,
+        le=168,
+        description="Session expiration time (1-168 hours)"
+    )
+    
+    # Geofencing
+    geofence_default_radius_meters: int = Field(
+        default=500,
+        ge=50,
+        le=5000,
+        description="Default geofence radius (50-5000 meters)"
+    )
+    geofence_tolerance_meters: int = Field(
+        default=50,
+        ge=0,
+        le=200,
+        description="GPS accuracy tolerance (0-200 meters)"
+    )
+    
+    # Daily.co API
+    daily_api_key: Optional[str] = Field(
+        default=None,
+        description="Daily.co API key for video/voice calls"
+    )
+    daily_domain: Optional[str] = Field(
+        default=None,
+        description="Daily.co domain for room creation"
+    )
+    
+    # Application
+    debug: bool = Field(
+        default=False,
+        description="Enable debug mode"
+    )
+    host: str = Field(
+        default="0.0.0.0",
+        description="Server bind address"
+    )
+    port: int = Field(
+        default=8000,
+        ge=1024,
+        le=65535,
+        description="Server port (1024-65535)"
+    )
+    environment: str = Field(
+        default="development",
+        description="Deployment environment"
+    )
+    
+    app_name: str = Field(
+        default="SIWES Logbook Automation System",
+    )
+
+    @field_validator("secret_key")
+    @classmethod
+    def validate_secret_key(cls, v: str) -> str:
+        """Validate secret key is not a default/example value.
+        
+        Args:
+            v: Secret key value to validate.
+        
+        Returns:
+            Validated secret key.
+        
+        Raises:
+            ValueError: If secret key contains 'change' or 'example'.
+        """
+        if "change" in v.lower() or "example" in v.lower():
+            raise ValueError(
+                "Secret key must be changed from example value. "
+                "Generate with: python -c 'import secrets; print(secrets.token_hex(32))'"
+            )
+        return v
+    
+    @property
+    def db_url(self) -> str:
+        """Get appropriate database URL based on environment.
+        
+        Returns:
+            PostgreSQL URL for production, SQLite for development.
+        """
+        if self.environment == "production":
+            return self.database_url
+        return self.database_url_dev
+    
+    class Config:
+        """Pydantic configuration."""
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = False
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    """Get cached application settings instance.
+    
+    Settings are loaded once and cached for application lifetime.
+    Uses lru_cache to ensure single instance across application.
+    
+    Returns:
+        Singleton Settings instance.
+    
+    Example:
+        >>> settings = get_settings()
+        >>> print(f"Running on port {settings.port}")
+        Running on port 8000
+    """
+    return Settings()

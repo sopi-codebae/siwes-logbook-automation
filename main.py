@@ -1,0 +1,90 @@
+"""Main application entry point for the SIWES Logbook System.
+
+This module initializes the FastHTML application, sets up routes,
+and configures the server.
+"""
+
+import sys
+from pathlib import Path
+
+# Inject local Faststrap source to use the fixed PWA module (installed version has bugs)
+# Matches structure: Desktop/FastHTML/Faststrap/src
+FASTSTRAP_SRC = Path(__file__).resolve().parent.parent / "Faststrap" / "src"
+if FASTSTRAP_SRC.exists():
+    sys.path.insert(0, str(FASTSTRAP_SRC))
+
+from fasthtml.common import *
+from starlette.middleware import Middleware
+from app.infrastructure.database.middleware import DBSessionMiddleware
+from faststrap import add_bootstrap, mount_assets
+from faststrap.pwa import add_pwa
+from app.config import get_settings
+from app.infrastructure.database import init_db
+from app.presentation.routes.auth import setup_auth_routes
+from app.presentation.components.shared import SIWES_THEME, setup_siwes_defaults
+
+
+# Get settings
+settings = get_settings()
+
+# Create FastHTML app with session support and DB middleware
+app = FastHTML(
+    secret_key=settings.secret_key,
+    session_cookie="siwes_session",
+    middleware=[Middleware(DBSessionMiddleware)]
+)
+
+# Apply Faststrap theme
+add_bootstrap(app, theme=SIWES_THEME, mode="light")
+
+# Add PWA capabilities (following pwa_demo.py pattern)
+add_pwa(
+    app,
+    name="SIWES Logbook",
+    short_name="SIWES",
+    description="Student Industrial Work Experience Scheme - Digital Logbook for tracking internship activities",
+    theme_color="#6366f1",  # Primary purple from SIWES_THEME
+    background_color="#ffffff",
+    icon_path="/assets/icon.png",
+    display="standalone",
+    start_url="/",
+    scope="/",
+    service_worker=True,  # Re-enabled like in pwa_demo.py
+    offline_page=True,
+)
+
+# Add custom headers after Faststrap and PWA
+app.hdrs = app.hdrs + [
+    Link(rel="stylesheet", href="/assets/custom.css"),
+    Script(src="https://unpkg.com/htmx.org@1.9.10"),
+    Script(src="/assets/sync_manager.js"),
+]
+
+# Setup component defaults
+setup_siwes_defaults()
+
+# Mount static files for custom CSS and icon
+mount_assets(app, "app/presentation/assets", url_path="/assets")
+
+# Initialize database
+init_db()
+
+# Setup routes
+setup_auth_routes(app)
+from app.presentation.routes.student import setup_student_routes
+setup_student_routes(app)
+from app.presentation.routes.supervisor import setup_supervisor_routes
+setup_supervisor_routes(app)
+
+
+# Health check endpoint
+@app.get("/health")
+def health_check():
+    """Health check endpoint for monitoring."""
+    return {"status": "healthy", "service": "siwes-logbook"}
+
+
+# Run the application
+if __name__ == "__main__":
+    serve(port=8027)
+
