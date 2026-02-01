@@ -6,11 +6,12 @@ from datetime import datetime, timedelta
 from typing import List, Dict
 
 
-def FilterTabs(active_filter: str = "all") -> FT:
+def FilterTabs(active_filter: str = "all", oob: bool = False) -> FT:
     """Filter tabs for logbook view.
     
     Args:
         active_filter: Current active filter (all, this_week, pending)
+        oob: Whether to return as Out-Of-Band swap
     
     Returns:
         Filter tabs HTML
@@ -25,7 +26,7 @@ def FilterTabs(active_filter: str = "all") -> FT:
         *[
             Button(
                 f["label"],
-                cls=f"filter-tab {'active' if active_filter == f['key'] else ''}",
+                cls=f"me-2 {'bg-primary text-white' if active_filter == f['key'] else 'border bg-white text-dark'}",
                 hx_get=f"/student/logbook/filter/{f['key']}",
                 hx_target="#weeks-container",
                 hx_swap="innerHTML",
@@ -33,7 +34,9 @@ def FilterTabs(active_filter: str = "all") -> FT:
             )
             for f in filters
         ],
-        cls="filter-tabs"
+        cls="mb-4 d-flex flex-wrap gap-2",
+        id="student-filter-tabs",
+        hx_swap_oob="true" if oob else None
     )
 
 
@@ -381,7 +384,8 @@ def LogbookPage(weeks_data: List[Dict], current_week: int, total_weeks: int = 25
                 *[
                     DayCell(
                         day["name"],
-                        day["date"],
+                        day["display_date"],
+                        day["iso_date"],
                         day.get("status"),
                         day.get("hours")
                     )

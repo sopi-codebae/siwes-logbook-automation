@@ -111,46 +111,120 @@ def ChatInput() -> FT:
     )
 
 
-def CommunicationPage() -> FT:
-    """Main Communication (Chat & Calls) page."""
+def CallHistoryItem(call: dict) -> FT:
+    """Individual call history item."""
+    icon_color = "text-success" if call["type"] == "incoming" else "text-primary"
+    icon_name = "telephone-inbound-fill" if call["type"] == "incoming" else "telephone-outbound-fill"
     
-    # Mock Messages
-    messages = [
-        {"text": "Good morning Dr. Williams. I have a question about the database design task.", "time": "10:15 AM", "is_me": True},
-        {"text": "Good morning John! Of course, what do you need help with?", "time": "10:18 AM", "is_me": False},
-        {"text": "I'm unsure about the normalization level we should target. Should I aim for 3NF or BCNF?", "time": "10:20 AM", "is_me": True},
-        {"text": "For this project, 3NF should be sufficient. Focus on eliminating transitive dependencies. Let me know if you need more clarification.", "time": "10:25 AM", "is_me": False},
-    ]
+    return Div(
+        Div(
+            # Call Icon
+            Div(
+                Icon(icon_name, cls=f"{icon_color} fs-4"),
+                cls="me-3"
+            ),
+            # Call Details
+            Div(
+                H6(call["name"], cls="mb-0 fw-bold"),
+                P(f"{call['type'].capitalize()} • {call['duration']}", cls="text-muted small mb-0"),
+                cls="flex-grow-1"
+            ),
+            # Time
+            P(call["time"], cls="text-muted small mb-0"),
+            cls="d-flex align-items-center"
+        ),
+        cls="p-3 border-bottom"
+    )
+
+
+def CommunicationTabs(active_tab: str = "chat") -> FT:
+    """Communication filter tabs."""
+    return Div(
+        Button(
+            "Chat", 
+            cls=f"me-2 {'bg-primary text-white' if active_tab == 'chat' else 'border bg-white text-dark'}",
+            hx_get="/student/communication?tab=chat",
+            hx_target="#communication-content",
+            hx_swap="innerHTML",
+            style="border-radius:8px;"
+        ),
+        Button(
+            "Call History", 
+            cls=f"{'bg-primary text-white' if active_tab == 'calls' else 'border bg-white text-dark'}",
+            hx_get="/student/communication?tab=calls",
+            hx_target="#communication-content",
+            hx_swap="innerHTML",
+            style="border-radius:8px;"
+        ),
+        cls="mb-3 d-flex gap-2",
+        id="communication-tabs",
+        hx_swap_oob="true" if active_tab != "chat" else None
+    )
+
+
+def CommunicationContent(active_tab: str = "chat") -> FT:
+    """Communication content area (chat or call history)."""
+    if active_tab == "calls":
+        # Mock call history
+        calls = [
+            {"name": "Dr. Ada Williams", "type": "incoming", "duration": "15:32", "time": "2 hours ago"},
+            {"name": "Dr. Ada Williams", "type": "outgoing", "duration": "08:15", "time": "Yesterday"},
+            {"name": "Dr. Ada Williams", "type": "incoming", "duration": "22:45", "time": "2 days ago"},
+        ]
+        
+        return Div(
+            Card(
+                Div(
+                    H5("Call History", cls="mb-3"),
+                    *[CallHistoryItem(call) for call in calls],
+                    cls="p-3"
+                ),
+                cls="white-color"
+            ),
+            id="communication-content"
+        )
+    else:
+        # Chat view (default)
+        messages = [
+            {"text": "Good morning Dr. Williams. I have a question about the database design task.", "time": "10:15 AM", "is_me": True},
+            {"text": "Good morning John! Of course, what do you need help with?", "time": "10:18 AM", "is_me": False},
+            {"text": "I'm unsure about the normalization level we should target. Should I aim for 3NF or BCNF?", "time": "10:20 AM", "is_me": True},
+            {"text": "For this project, 3NF should be sufficient. Focus on eliminating transitive dependencies. Let me know if you need more clarification.", "time": "10:25 AM", "is_me": False},
+        ]
+        
+        return Div(
+            Card(
+                Div(
+                    *[
+                        MessageBubble(m["text"], m["time"], m["is_me"]) 
+                        for m in messages
+                    ],
+                    cls="chat-messages p-4"
+                ),
+                # Input Footer
+                Div(
+                    ChatInput(),
+                    cls="p-3 border-top"
+                ),
+                cls="mb-4 white-color"
+            ),
+            id="communication-content"
+        )
+
+
+def CommunicationPage(active_tab: str = "chat") -> FT:
+    """Main Communication (Chat & Calls) page."""
     
     return Div(
         # 1. Supervisor Details (Header)
         ChatHeader(),
         
-        # 2. Filter Tabs / Sections
-        Div(
-            Button("Chat", variant="primary", cls="me-2"),
-            Button("Call History", variant="light", cls="text-muted"),
-            cls="mb-3 ps-1"
-        ),
+        # 2. Filter Tabs
+        CommunicationTabs(active_tab),
         
-        # 3. Chat Area (No internal scrollbar - uses page scroll)
-        Card(
-            Div(
-                *[
-                    MessageBubble(m["text"], m["time"], m["is_me"]) 
-                    for m in messages
-                ],
-                cls="chat-messages p-4"
-                # Removed fixed height and overflow
-            ),
-            # Input Footer
-            Div(
-                ChatInput(),
-                cls="p-3 border-top"
-            ),
-            # cls="border-0 shadow-sm"
-            cls="mb-4 white-color"
-            
-        ),
+        # 3. Content Area (Chat or Call History)
+        CommunicationContent(active_tab),
+        
         cls="h-100"
     )
+

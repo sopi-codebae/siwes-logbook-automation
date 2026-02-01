@@ -59,8 +59,7 @@ class LogRepository(BaseRepository[DailyLog]):
             >>> logs = repo.get_student_logs(student_id, limit=20)
         """
         query = self.db.query(DailyLog).filter(
-            DailyLog.student_id == student_id,
-            DailyLog.deleted_at.is_(None)
+            DailyLog.student_id == student_id
         )
         
         if placement_id:
@@ -92,8 +91,7 @@ class LogRepository(BaseRepository[DailyLog]):
         """
         return self.db.query(DailyLog).filter(
             DailyLog.placement_id == placement_id,
-            DailyLog.week_number == week_number,
-            DailyLog.deleted_at.is_(None)
+            DailyLog.week_number == week_number
         ).order_by(DailyLog.log_date).all()
     
     def get_logs_by_status(
@@ -120,8 +118,7 @@ class LogRepository(BaseRepository[DailyLog]):
         """
         query = self.db.query(DailyLog).filter(
             DailyLog.placement_id == placement_id,
-            DailyLog.status == status,
-            DailyLog.deleted_at.is_(None)
+            DailyLog.status == status
         ).order_by(DailyLog.log_date.desc())
         
         if limit:
@@ -162,8 +159,7 @@ class LogRepository(BaseRepository[DailyLog]):
         """
         return self.db.query(DailyLog).filter(
             DailyLog.student_id == student_id,
-            DailyLog.log_date == log_date,
-            DailyLog.deleted_at.is_(None)
+            DailyLog.log_date == log_date
         ).first()
     
     def get_unsynced_logs(self, student_id: str) -> List[DailyLog]:
@@ -183,8 +179,7 @@ class LogRepository(BaseRepository[DailyLog]):
         """
         return self.db.query(DailyLog).filter(
             DailyLog.student_id == student_id,
-            DailyLog.is_synced == False,
-            DailyLog.deleted_at.is_(None)
+            DailyLog.is_synced == False
         ).order_by(DailyLog.log_date).all()
     
     def get_by_client_uuid(self, client_uuid: str) -> Optional[DailyLog]:
@@ -202,8 +197,7 @@ class LogRepository(BaseRepository[DailyLog]):
             ...     print("Log already synced")
         """
         return self.db.query(DailyLog).filter(
-            DailyLog.client_uuid == client_uuid,
-            DailyLog.deleted_at.is_(None)
+            DailyLog.client_uuid == client_uuid
         ).first()
     
     def get_logs_by_location_status(
@@ -228,8 +222,7 @@ class LogRepository(BaseRepository[DailyLog]):
         """
         return self.db.query(DailyLog).filter(
             DailyLog.placement_id == placement_id,
-            DailyLog.location_status == location_status,
-            DailyLog.deleted_at.is_(None)
+            DailyLog.location_status == location_status
         ).order_by(DailyLog.log_date.desc()).all()
     
     def count_logs_by_week(self, placement_id: str) -> dict:
@@ -249,8 +242,7 @@ class LogRepository(BaseRepository[DailyLog]):
             DailyLog.week_number,
             DailyLog.id
         ).filter(
-            DailyLog.placement_id == placement_id,
-            DailyLog.deleted_at.is_(None)
+            DailyLog.placement_id == placement_id
         ).all()
         
         counts = {}

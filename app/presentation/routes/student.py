@@ -52,17 +52,27 @@ def setup_student_routes(app: FastHTML):
     @app.get("/student/communication")
     @require_auth()
     @require_role(UserRole.STUDENT)
-    def student_communication(request: Request, db: Session = None, current_user: Optional[User] = None):
+    def student_communication(request: Request, tab: str = "chat", db: Session = None, current_user: Optional[User] = None):
         """Student communication page.
         
         Args:
             request: FastHTML request object
+            tab: Active tab (chat or calls)
             db: Database session
         
         Returns:
-            Communication page HTML
+            Communication page HTML or HTMX partial
         """
-        content = CommunicationPage()
+        # Check if HTMX request (partial update)
+        if request.headers.get("HX-Request"):
+            from app.presentation.components.domain.student.communication import CommunicationTabs, CommunicationContent
+            return (
+                CommunicationTabs(active_tab=tab),
+                CommunicationContent(active_tab=tab)
+            )
+        
+        # Full page load
+        content = CommunicationPage(active_tab=tab)
         
         return DashboardLayout(
             content,
@@ -259,31 +269,41 @@ def setup_student_routes(app: FastHTML):
             db: Database session
         
         Returns:
-            Filtered week cards HTML
+            Filtered week cards HTML with updated filter tabs
         """
         weeks_data = _get_weeks_data(db, current_user.id, filter_type)
         
-        return Div(
-            *[WeekCard(week["number"], week["start_date"], week["days"]) for week in weeks_data],
-            id="weeks-container"
+        return (
+            FilterTabs(active_filter=filter_type, oob=True),
+            *[WeekCard(week["number"], week["start_date"], week["days"]) for week in weeks_data]
         )
 
 
 def _get_weeks_data(db: Session, student_id: str, filter_type: str = "all") -> List[Dict]:
     """Helper to get and format weeks data."""
-    # 1. Get placement
+    from app.domain.models.user import StudentProfile
+    
+    # 1. Get student profile for SIWES dates
+    student_profile = db.query(StudentProfile).filter(
+        StudentProfile.user_id == student_id
+    ).first()
+    
+    if not student_profile:
+        return []
+    
+    # 2. Get placement
     repo = PlacementRepository(db)
     placement = repo.get_active_placement(student_id)
     if not placement:
         return []
         
-    start_date = placement.start_date
+    start_date = student_profile.siwes_start_date
     service = LogService(db)
     
     # Calculate current week
     today = date.today()
     days_since_start = (today - start_date).days
-    current_week_num = (days_since_start // 7) + 1
+    current_week_num = max(1, min((days_since_start // 7) + 1, 25))
     
     # 2. Get Logs
     all_logs = service.get_student_logs(student_id, placement.id)

@@ -40,9 +40,6 @@ class PlacementRepository(BaseRepository[IndustrialPlacement]):
     def get_active_placement(self, student_id: str) -> Optional[IndustrialPlacement]:
         """Get the active placement for a student.
         
-        Returns the placement that is currently active based on today's date
-        falling within the start_date and end_date range.
-        
         Args:
             student_id: The student's user ID
         
@@ -54,13 +51,22 @@ class PlacementRepository(BaseRepository[IndustrialPlacement]):
             >>> if placement:
             ...     print(f"Placed at: {placement.company_name}")
         """
-        today = date.today()
-        return self.db.query(IndustrialPlacement).filter(
-            IndustrialPlacement.student_id == student_id,
-            IndustrialPlacement.start_date <= today,
-            IndustrialPlacement.end_date >= today,
-            IndustrialPlacement.deleted_at.is_(None)
+        from app.domain.models.user import StudentProfile
+        
+        # Query through StudentProfile since it has the placement_id foreign key
+        student_profile = self.db.query(StudentProfile).filter(
+            StudentProfile.user_id == student_id
         ).first()
+        
+        if not student_profile or not student_profile.placement_id:
+            return None
+        
+        # Get the placement (no date/status checks since model doesn't have those fields)
+        placement = self.db.query(IndustrialPlacement).filter(
+            IndustrialPlacement.id == student_profile.placement_id
+        ).first()
+        
+        return placement
     
     def get_student_placements(
         self,

@@ -132,24 +132,36 @@ def seed_data():
         db.add(student_profile)
         db.flush()
 
-        # Create Placement
-        from app.domain.models.placement import IndustrialPlacement
+        # Create Geofence first (required for placement)
+        from app.domain.models.placement import IndustrialPlacement, Geofence
+        import uuid
         
+        geofence = Geofence(
+            id=str(uuid.uuid4()),
+            latitude=6.5244,  # Lagos coordinates
+            longitude=3.3792,
+            radius_meters=500
+        )
+        db.add(geofence)
+        db.flush()
+        print("created geofence")
+        
+        # Create Placement (only fields that exist in the model)
         placement = IndustrialPlacement(
-            student_id=student.id,
+            id=str(uuid.uuid4()),
             company_name="Tech Solutions Ltd",
-            company_address="123 Innovation Drive, Tech City",
-            industry_sector="Information Technology",
-            supervisor_name="Dr. Supervisor",
-            supervisor_phone="08012345678",
-            supervisor_email=supervisor_email,
-            start_date=date(2024, 1, 15),
-            end_date=date(2024, 7, 15),
-            status="active"
+            address="123 Innovation Drive, Tech City",
+            supervisor_contact="supervisor@techsolutions.com",
+            geofence_id=geofence.id
         )
         db.add(placement)
         db.flush()
         print("created placement")
+        
+        # Link student to placement
+        student_profile.placement_id = placement.id
+        db.flush()
+        print("linked student to placement")
         
         db.commit()
         print("\n✅ Seeding COMPLETE!")
