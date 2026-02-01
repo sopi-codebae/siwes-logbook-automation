@@ -13,6 +13,7 @@ def FilterTabs(active_filter: str = "all", oob: bool = False) -> FT:
         active_filter: Current active filter (all, this_week, pending)
         oob: Whether to return as Out-Of-Band swap
     
+        
     Returns:
         Filter tabs HTML
     """
@@ -389,7 +390,7 @@ def LogbookPage(weeks_data: List[Dict], current_week: int, total_weeks: int = 25
                         day.get("status"),
                         day.get("hours")
                     )
-                    for day in weeks_data[0]["days"]
+                    for day in (weeks_data[0]["days"] if weeks_data else [])
                 ],
                 cls="daily-grid"
             ),

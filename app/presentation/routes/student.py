@@ -7,7 +7,7 @@ from app.infrastructure.security.session import require_auth, require_role
 from app.domain.models.log import LogStatus
 from app.application.services.log import LogService
 from app.presentation.components.domain.student.dashboard import StudentDashboard
-from app.presentation.components.domain.student.logbook import LogbookPage, WeekCard, LogEntryModalBody
+from app.presentation.components.domain.student.logbook import LogbookPage, WeekCard, LogEntryModalBody, FilterTabs
 from app.presentation.components.domain.student.communication import CommunicationPage
 from app.presentation.components.domain.student.profile import StudentProfilePage
 from app.presentation.components.ui.layouts import DashboardLayout
