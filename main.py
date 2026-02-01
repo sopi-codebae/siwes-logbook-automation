@@ -7,12 +7,6 @@ and configures the server.
 import sys
 # from pathlib import Path
 
-# # Inject local Faststrap source to use the fixed PWA module (installed version has bugs)
-# # Matches structure: Desktop/FastHTML/Faststrap/src
-# FASTSTRAP_SRC = Path(__file__).resolve().parent.parent / "Faststrap" / "src"
-# if FASTSTRAP_SRC.exists():
-#     sys.path.insert(0, str(FASTSTRAP_SRC))
-
 from fasthtml.common import *
 from starlette.middleware import Middleware
 from app.infrastructure.database.middleware import DBSessionMiddleware
@@ -86,5 +80,5 @@ def health_check():
 
 # Run the application
 if __name__ == "__main__":
-    serve(port=8012)
+    serve(port=5012)
 

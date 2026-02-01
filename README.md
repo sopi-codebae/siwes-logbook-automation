@@ -394,7 +394,7 @@ The following are explicitly excluded from this project:
 ## 🤝 Contributing
 
 This is an academic project. For questions or issues, contact the development team.
-[EMAIL_ADDRESS] meshelleva@gmail.com [EMAIL_ADDRESS]
+meshelleva@gmail.com
 
 ---
 

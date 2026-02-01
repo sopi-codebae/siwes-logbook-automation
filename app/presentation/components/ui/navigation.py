@@ -24,12 +24,26 @@ def StudentSidebarNav(active_page: str = "dashboard") -> FT:
     
     return Div(
         # Header
+        # Div(
+        #     Icon("mortarboard-fill", cls="me-2"),
+        #     "SIWES Portal",
+
+        #     cls="sidebar-header"
+        # ),
         Div(
-            Icon("mortarboard-fill", cls="me-2"),
-            "SIWES Portal",
-            cls="sidebar-header"
+            Div(
+                Icon("mortarboard-fill", style="font-size: 1.75rem;"), 
+                cls="text-center text-white d-flex justify-content-center align-items-center",
+                style="background-color: var(--bs-primary); border-radius: 10px; width: 50px; height: 50px;"
+            ),
+            Div(
+                P("SIWES Portal", cls="m-0 fw-bold text-white"),
+                P("Student", cls="mb-0 text-white-50", style="font-size: 0.875rem;"),
+                cls="d-flex flex-column justify-content-center align-items-start",
+            ),
+            cls="sidebar-header d-flex align-items-center gap-4 px-3 py-2 mb-5",
         ),
-        
+
         # Navigation items
         Div(
             *[
@@ -44,14 +58,25 @@ def StudentSidebarNav(active_page: str = "dashboard") -> FT:
             cls="nav-items flex-grow-1"
         ),
         
+        # # Logout at bottom
+        # Div(
+        #     A(
+        #         Icon("box-arrow-right", cls="nav-item-icon"),
+        #         "Logout",
+        #         href="/logout",
+        #         cls="nav-item",
+        #         **{"data-bs-dismiss": "offcanvas"}
+        #     ),
+        #     cls="mt-auto"
+        # ),
+
         # Logout at bottom
         Div(
             A(
                 Icon("box-arrow-right", cls="nav-item-icon"),
                 "Logout",
                 href="/logout",
-                cls="nav-item",
-                **{"data-bs-dismiss": "offcanvas"}
+                cls="nav-item"
             ),
             cls="mt-auto"
         ),
@@ -125,12 +150,26 @@ def SupervisorSidebarNav(active_page: str = "dashboard") -> FT:
     
     return Div(
         # Header
-        Div(
-            Icon("mortarboard-fill", cls="me-2"),
-            "SIWES Portal",
-            cls="sidebar-header"
-        ),
+        # Div(
+        #     Icon("mortarboard-fill", cls="me-2"),
+        #     "SIWES Portal",
+        #     cls="sidebar-header"
+        # ),
         
+        Div(
+            Div(
+                Icon("mortarboard-fill", style="font-size: 1.75rem;"), 
+                cls="text-center text-white d-flex justify-content-center align-items-center",
+                style="background-color: var(--bs-primary); border-radius: 10px; width: 50px; height: 50px;"
+            ),
+            Div(
+                P("SIWES Portal", cls="m-0 fw-bold text-white"),
+                P("Supervisor", cls="mb-0 text-white-50", style="font-size: 0.875rem;"),
+                cls="d-flex flex-column justify-content-center align-items-start",
+            ),
+            cls="sidebar-header d-flex align-items-center gap-4 px-3 py-2 mb-5",
+        ),
+
         # Navigation items
         Div(
             *[

@@ -64,7 +64,14 @@ def LoginPage(error: str | None = None) -> FT:
         Full login page with AuthLayout
     """
     return AuthLayout(
-        Div(Icon("mortarboard-fill", size="3rem"), cls="text-center text-primary mb-3"),
+        Div(
+            Div(
+                Icon("mortarboard-fill", style="font-size: 2.5rem;"), 
+                cls="text-center text-white d-flex justify-content-center align-items-center",
+                style="background-color: var(--bs-primary); border-radius: 10px; width: 60px; height: 60px;"
+            ),
+            cls="mb-4 d-flex justify-content-center align-items-center",
+        ),
         H1("SIWES Portal", cls="text-center mb-2"),
         P("Sign in to your account", cls="text-center text-muted mb-4"),
         LoginForm(error)
