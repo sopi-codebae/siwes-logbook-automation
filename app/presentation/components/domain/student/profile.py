@@ -207,24 +207,33 @@ def SettingsCard() -> FT:
     )
 
 
-def StudentProfilePage() -> FT:
-    """Complete student profile page."""
+def StudentProfilePage(user: dict = None, placement: dict = None) -> FT:
+    """Complete student profile page.
     
-    # Mock data
-    user = {
-        "name": "John Doe",
-        "email": "john.doe@student.edu",
-        "matric": "CSC/2020/001",
-        "dept": "Computer Science",
-        "inst": "University of Technology"
-    }
+    Args:
+        user: Dictionary providing user info (name, email, matric, dept, inst, start_date, end_date)
+        placement: Dictionary providing placement info (company, address, supervisor, radius)
+    """
     
-    placement = {
-        "company": "Tech Industries Ltd.",
-        "address": "123 Innovation Drive, Tech City",
-        "supervisor": "Mr. James Wilson",
-        "radius": "500 meters"
-    }
+    # Default fallbacks if None (prevents crash, shows placeholders)
+    if not user:
+        user = {
+            "name": "Loading...",
+            "email": "--",
+            "matric": "--",
+            "dept": "--",
+            "inst": "--",
+            "start": "--",
+            "end": "--"
+        }
+    
+    if not placement:
+        placement = {
+            "company": "No Active Placement",
+            "address": "--",
+            "supervisor": "--",
+            "radius": "--"
+        }
     
     return Div(
         # Page Title
@@ -242,7 +251,7 @@ def StudentProfilePage() -> FT:
         
         PlacementDetailsCard(placement["company"], placement["address"], placement["supervisor"], placement["radius"]),
         
-        DurationCard("January 8, 2024", "July 5, 2024", 25, 6),
+        DurationCard(user.get("start", "--"), user.get("end", "--"), 24, 6), # Fixed duration calc for now
         
         SettingsCard(),
         

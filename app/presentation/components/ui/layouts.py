@@ -49,7 +49,12 @@ def DashboardLayout(
     Returns:
         Div with responsive dashboard layout
     """
+    from app.presentation.components.ui.call_notification import CallNotificationModal
+    
     elements = []
+    
+    # Call Notification Modal (hidden by default, shown via SSE)
+    elements.append(CallNotificationModal())
     
     # Unified sidebar (responsive for all screen sizes)
     if sidebar:
@@ -67,5 +72,8 @@ def DashboardLayout(
     # Bottom nav (mobile only)
     if bottom_nav:
         elements.append(bottom_nav)
+    
+    # SSE Notification Listener Script
+    elements.append(Script(src="/assets/call_notifications.js"))
     
     return Div(*elements, **kwargs)

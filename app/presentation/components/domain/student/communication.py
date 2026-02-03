@@ -4,8 +4,17 @@ from fasthtml.common import *
 from faststrap import Card, Button, Icon, Row, Col, Badge, Input, InputGroup
 
 
-def ChatHeader(supervisor_name: str = "Dr. Ada Williams", department: str = "Computer Science") -> FT:
+def ChatHeader(supervisor: dict) -> FT:
     """Header for the chat interface with supervisor info and actions."""
+    name = supervisor.get("name", "Dr. Ada Williams")
+    dept = supervisor.get("department", "Computer Science")
+    status = supervisor.get("status", "Online")
+    sup_id = supervisor.get("id", "")
+    
+    # Generate initials
+    parts = name.split()
+    initials = "".join([p[0] for p in parts[:2]]) if parts else "SU"
+    
     return Card(
         Div(
             # User Info
@@ -13,21 +22,21 @@ def ChatHeader(supervisor_name: str = "Dr. Ada Williams", department: str = "Com
                 # Avatar with status dot
                 Div(
                     Div(
-                        "AW",
+                        initials,
                         cls="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold",
                         style="width: 48px; height: 48px; font-size: 1.2rem;"
                     ),
                     # Online status indicator
                     Div(
-                        cls="position-absolute bg-success border border-white rounded-circle",
+                        cls=f"position-absolute {'bg-success' if status == 'Online' else 'bg-secondary'} border border-white rounded-circle",
                         style="width: 12px; height: 12px; bottom: 0; right: 0;"
                     ),
                     cls="position-relative me-3"
                 ),
                 Div(
-                    H5(supervisor_name, cls="mb-0 fw-bold"),
-                    Div(department, cls="text-muted small"),
-                    Div("Online", cls="text-success small fw-bold"),
+                    H5(name, cls="mb-0 fw-bold"),
+                    Div(dept, cls="text-muted small"),
+                    Div(status, cls=f"{'text-success' if status == 'Online' else 'text-muted'} small fw-bold"),
                     cls="d-flex flex-column"
                 ),
                 cls="d-flex align-items-center"
@@ -39,13 +48,21 @@ def ChatHeader(supervisor_name: str = "Dr. Ada Williams", department: str = "Com
                     Icon("telephone"),
                     variant="light",
                     cls="rounded-circle me-2",
-                    style="width: 40px; height: 40px;"
+                    style="width: 40px; height: 40px;",
+                    title="Start Voice Call",
+                    onclick="handleVideoCallClick(event, 'voice')",
+                    disabled=not sup_id,
+                    **{"data-supervisor-id": sup_id}
                 ),
                 Button(
                     Icon("camera-video"),
                     variant="primary",
                     cls="rounded-circle",
-                    style="width: 40px; height: 40px;"
+                    style="width: 40px; height: 40px;",
+                    title="Start Video Call",
+                    onclick="handleVideoCallClick(event)",
+                    disabled=not sup_id,
+                    **{"data-supervisor-id": sup_id}
                 ),
                 cls="d-flex"
             ),
@@ -84,28 +101,35 @@ def MessageBubble(text: str, time: str, is_me: bool) -> FT:
     )
 
 
-def ChatInput() -> FT:
+def ChatInput(recipient_id: str) -> FT:
     """Input area for sending messages."""
     return Card(
-        Div(
-            Button(
-                Icon("paperclip"),
-                variant="link",
-                cls="text-muted me-2 px-2"
+        Form(
+            Div(
+                Button(
+                    Icon("paperclip"),
+                    variant="link",
+                    cls="text-muted me-2 px-2",
+                    type="button"
+                ),
+                Input(type="hidden", name="recipient_id", value=recipient_id),
+                Input(
+                    name="content",
+                    placeholder="Type a message...",
+                    cls="border-0 bg-transparent flex-grow-1 shadow-none",
+                    style="resize: none; height: 40px;",
+                    autocomplete="off"
+                ),
+                Button(
+                    Icon("send-fill"),
+                    variant="primary",
+                    cls="rounded-circle ms-2 d-flex align-items-center justify-content-center",
+                    style="width: 40px; height: 40px;",
+                    type="submit"
+                ),
+                cls="d-flex align-items-center p-2 bg-light rounded-pill border"
             ),
-            Input(
-                name="message_input",
-                placeholder="Type a message...",
-                cls="border-0 bg-transparent flex-grow-1 shadow-none",
-                style="resize: none; height: 40px;"
-            ),
-            Button(
-                Icon("send-fill"),
-                variant="primary",
-                cls="rounded-circle ms-2 d-flex align-items-center justify-content-center",
-                style="width: 40px; height: 40px;"
-            ),
-            cls="d-flex align-items-center p-2 bg-light rounded-pill border"
+            id="chat-form"
         ),
         cls="mt-3 border-0 bg-transparent"
     )
@@ -162,10 +186,10 @@ def CommunicationTabs(active_tab: str = "chat") -> FT:
     )
 
 
-def CommunicationContent(active_tab: str = "chat") -> FT:
+def CommunicationContent(active_tab: str = "chat", messages: list = [], recipient_id: str = None) -> FT:
     """Communication content area (chat or call history)."""
     if active_tab == "calls":
-        # Mock call history
+        # Mock call history (Keep as is for now or todo)
         calls = [
             {"name": "Dr. Ada Williams", "type": "incoming", "duration": "15:32", "time": "2 hours ago"},
             {"name": "Dr. Ada Williams", "type": "outgoing", "duration": "08:15", "time": "Yesterday"},
@@ -184,46 +208,47 @@ def CommunicationContent(active_tab: str = "chat") -> FT:
             id="communication-content"
         )
     else:
-        # Chat view (default)
-        messages = [
-            {"text": "Good morning Dr. Williams. I have a question about the database design task.", "time": "10:15 AM", "is_me": True},
-            {"text": "Good morning John! Of course, what do you need help with?", "time": "10:18 AM", "is_me": False},
-            {"text": "I'm unsure about the normalization level we should target. Should I aim for 3NF or BCNF?", "time": "10:20 AM", "is_me": True},
-            {"text": "For this project, 3NF should be sufficient. Focus on eliminating transitive dependencies. Let me know if you need more clarification.", "time": "10:25 AM", "is_me": False},
-        ]
-        
+        # Chat view
         return Div(
             Card(
                 Div(
-                    *[
-                        MessageBubble(m["text"], m["time"], m["is_me"]) 
-                        for m in messages
-                    ],
-                    cls="chat-messages p-4"
+                    Div(
+                        *[
+                            MessageBubble(m["text"], m["time"], m["is_me"]) 
+                            for m in messages
+                        ],
+                        cls="chat-messages p-4",
+                        id="chat-messages-list",
+                        style="height: 400px; overflow-y: auto;"
+                    ),
+                    # Input Footer
+                    Div(
+                        ChatInput(recipient_id),
+                        cls="p-3 border-top"
+                    ),
+                    cls="mb-4 white-color"
                 ),
-                # Input Footer
-                Div(
-                    ChatInput(),
-                    cls="p-3 border-top"
-                ),
-                cls="mb-4 white-color"
+                id="communication-content"
             ),
-            id="communication-content"
+            # Auto-scroll on load
+            Script("var list = document.getElementById('chat-messages-list'); if(list) list.scrollTop = list.scrollHeight;")
         )
 
 
-def CommunicationPage(active_tab: str = "chat") -> FT:
+def CommunicationPage(active_tab: str = "chat", supervisor: dict = None, messages: list = []) -> FT:
     """Main Communication (Chat & Calls) page."""
-    
+    if supervisor is None:
+        supervisor = {}
+        
     return Div(
         # 1. Supervisor Details (Header)
-        ChatHeader(),
+        ChatHeader(supervisor),
         
         # 2. Filter Tabs
         CommunicationTabs(active_tab),
         
         # 3. Content Area (Chat or Call History)
-        CommunicationContent(active_tab),
+        CommunicationContent(active_tab, messages, supervisor.get("id")),
         
         cls="h-100"
     )

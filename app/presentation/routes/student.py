@@ -71,8 +71,56 @@ def setup_student_routes(app: FastHTML):
                 CommunicationContent(active_tab=tab)
             )
         
+        # Fetch real supervisor data
+        from app.domain.models.user import StudentProfile, User
+        
+        student_profile = db.query(StudentProfile).filter(StudentProfile.user_id == current_user.id).first()
+        supervisor_data = None
+        
+        if student_profile and student_profile.assigned_supervisor_id:
+            supervisor = db.query(User).filter(User.id == student_profile.assigned_supervisor_id).first()
+            if supervisor:
+                supervisor_data = {
+                    "id": supervisor.id,
+                    "name": supervisor.full_name,
+                    "department": student_profile.department, # Assuming same dept
+                    "status": "Offline" # Todo: WebSocket
+                }
+        
+        # Default fallback
+        if not supervisor_data:
+            supervisor_data = {
+                "id": "",
+                "name": "No Supervisor Assigned",
+                "department": "N/A",
+                "status": "Offline"
+            }
+            
+        # Fetch Chat History
+        messages = []
+        if tab == "chat" and supervisor_data.get("id"):
+            from app.domain.models.chat import ChatMessage
+            from sqlalchemy import or_, and_
+            
+            sup_id = supervisor_data["id"]
+            chat_logs = db.query(ChatMessage).filter(
+                or_(
+                    and_(ChatMessage.sender_id == current_user.id, ChatMessage.receiver_id == sup_id),
+                    and_(ChatMessage.sender_id == sup_id, ChatMessage.receiver_id == current_user.id)
+                )
+            ).order_by(ChatMessage.created_at.asc()).all()
+            
+            messages = [
+                {
+                    "text": m.message_body,
+                    "time": m.created_at.strftime("%I:%M %p"),
+                    "is_me": m.sender_id == current_user.id
+                }
+                for m in chat_logs
+            ]
+
         # Full page load
-        content = CommunicationPage(active_tab=tab)
+        content = CommunicationPage(active_tab=tab, supervisor=supervisor_data, messages=messages)
         
         return DashboardLayout(
             content,
@@ -93,7 +141,45 @@ def setup_student_routes(app: FastHTML):
         Returns:
             Profile page HTML
         """
-        content = StudentProfilePage()
+        from app.domain.models.user import StudentProfile, User
+        from app.infrastructure.repositories.placement import PlacementRepository
+        
+        # Fetch profile
+        profile = db.query(StudentProfile).filter(StudentProfile.user_id == current_user.id).first()
+        
+        # Fetch placement
+        placement_repo = PlacementRepository(db)
+        placement = placement_repo.get_active_placement(current_user.id)
+        
+        # Prepare User Data
+        user_data = {
+            "name": current_user.full_name,
+            "email": current_user.email,
+            "matric": profile.matric_number if profile else "--",
+            "dept": profile.department if profile else "--",
+            "inst": profile.institution if profile else "--",
+            "start": profile.siwes_start_date.strftime("%B %d, %Y") if profile and profile.siwes_start_date else "--",
+            "end": profile.siwes_end_date.strftime("%B %d, %Y") if profile and profile.siwes_end_date else "--"
+        }
+        
+        # Prepare Placement Data
+        placement_data = None
+        if placement:
+            # Try to get supervisor name
+            supervisor_name = "Not Assigned"
+            if profile and profile.assigned_supervisor_id:
+                sup = db.query(User).filter(User.id == profile.assigned_supervisor_id).first()
+                if sup:
+                    supervisor_name = sup.full_name
+            
+            placement_data = {
+                "company": placement.company_name,
+                "address": placement.address,
+                "supervisor": supervisor_name,
+                "radius": f"{placement.geofence_radius} meters"
+            }
+            
+        content = StudentProfilePage(user=user_data, placement=placement_data)
         
         return DashboardLayout(
             content,

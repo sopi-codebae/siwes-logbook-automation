@@ -52,6 +52,8 @@ app.hdrs = app.hdrs + [
     Link(rel="stylesheet", href="/assets/custom.css"),
     Script(src="https://unpkg.com/htmx.org@1.9.10"),
     Script(src="/assets/sync_manager.js"),
+    Script(src="/assets/video_call.js"),
+    Script(src="/assets/chat_manager.js"),
 ]
 
 # Setup component defaults
@@ -67,8 +69,16 @@ init_db()
 setup_auth_routes(app)
 from app.presentation.routes.student import setup_student_routes
 setup_student_routes(app)
+from app.presentation.routes.notifications import register_notification_routes
+register_notification_routes(app)
+from app.presentation.routes.calls import register_call_routes
+register_call_routes(app)
+from app.presentation.routes.chat import register_chat_routes
+register_chat_routes(app)
 from app.presentation.routes.supervisor import setup_supervisor_routes
 setup_supervisor_routes(app)
+from app.presentation.routes.calls import register_call_routes
+register_call_routes(app)
 
 
 # Health check endpoint
@@ -80,5 +90,15 @@ def health_check():
 
 # Run the application
 if __name__ == "__main__":
-    serve(port=5012)
+    serve(port=5017)
+
+    """
+    Window A (Supervisor)
+
+Login: ada.williams@university.edu.ng / password123
+Go to Communication. You should see "John Doe" (or similar) in the list.
+Window B (Student)
+
+Login: john.doe@student.university.edu.ng / password123
+Go to Communication. You should see "Dr. Ada Williams" in the header."""
 

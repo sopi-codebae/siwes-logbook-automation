@@ -189,9 +189,16 @@ class StudentProfile(Base, TimestampMixin):
         nullable=True,
         comment="Foreign key to industrial placement (nullable until assigned)"
     )
+    assigned_supervisor_id = Column(
+        String(36),
+        ForeignKey('users.id'),
+        nullable=True,
+        comment="Foreign key to university supervisor"
+    )
     
     # Relationships
     user = relationship("User", foreign_keys=[user_id], viewonly=True)
+    supervisor = relationship("User", foreign_keys=[assigned_supervisor_id])
     placement = relationship("IndustrialPlacement", back_populates="students")
 
 

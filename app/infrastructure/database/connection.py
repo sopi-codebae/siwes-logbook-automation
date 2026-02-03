@@ -15,6 +15,9 @@ from sqlalchemy.pool import StaticPool
 from app.config import get_settings
 from app.domain.models.base import Base
 
+# Import all models to ensure they're registered with Base.metadata
+from app.domain.models import *
+
 
 # Get database URL from settings
 settings = get_settings()

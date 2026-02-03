@@ -143,10 +143,94 @@ def setup_supervisor_routes(app: FastHTML):
             db: Database session
         
         Returns:
-            Communication HTML
+            Communication HTML or HTMX partial
         """
-        from app.presentation.components.domain.supervisor.communication import SupervisorCommunicationPage
-        content = SupervisorCommunicationPage(active_tab=tab)
+        from app.presentation.components.domain.supervisor.communication import SupervisorCommunicationPage, ChatMainArea
+        from app.domain.models.user import StudentProfile, User
+        
+        # Fetch assigned students
+        assigned_profiles = db.query(StudentProfile).filter(
+            StudentProfile.assigned_supervisor_id == current_user.id
+        ).all()
+        
+        students_data = []
+        for profile in assigned_profiles:
+            # Get user details
+            student_user = db.query(User).filter(User.id == profile.user_id).first()
+            if student_user:
+                 # Generate initials
+                parts = student_user.full_name.split()
+                initials = "".join([p[0] for p in parts[:2]]) if parts else "ST"
+                
+                # Mock color/unread (could be added to model later)
+                import random
+                colors = ["#6366f1", "#a855f7", "#6b7280", "#ef4444", "#10b981"]
+                # Use hash of ID to pick consistent color
+                color_idx = hash(student_user.id) % len(colors)
+                
+                students_data.append({
+                    "id": student_user.id,
+                    "name": student_user.full_name,
+                    "initials": initials,
+                    "company": profile.institution or "Univ", # Should be placement company?
+                    "color": colors[color_idx],
+                    "unread": 0 # TODO: Real chat count
+                })
+        
+        # Handle active student
+        active_student_id = request.query_params.get("student_id")
+        current_student = None
+        
+        if active_student_id and students_data:
+            current_student = next((s for s in students_data if s["id"] == active_student_id), None)
+            
+        if not current_student and students_data:
+            current_student = students_data[0]
+            
+        # Fallback if no students assigned
+        if not current_student:
+             current_student = {
+                 "id": "", 
+                 "name": "No Students Assigned", 
+                 "initials": "--", 
+                 "company": "", 
+                 "color": "#9ca3af",
+                 "unread": 0
+             }
+
+        # Fetch chat messages with active student
+        messages = []
+        if current_student and current_student["id"]:
+            from app.domain.models.chat import ChatMessage
+            from sqlalchemy import or_, and_
+            
+            chat_logs = db.query(ChatMessage).filter(
+                or_(
+                    and_(ChatMessage.sender_id == current_user.id, ChatMessage.receiver_id == current_student["id"]),
+                    and_(ChatMessage.sender_id == current_student["id"], ChatMessage.receiver_id == current_user.id)
+                )
+            ).order_by(ChatMessage.created_at.asc()).all()
+            
+            messages = [
+                {
+                    "text": m.message_body,
+                    "time": m.created_at.strftime("%I:%M %p"),
+                    "sender": "me" if m.sender_id == current_user.id else "them"
+                }
+                for m in chat_logs
+            ]
+
+        # Check if HTMX request (partial update for chat area)
+        if request.headers.get("HX-Request"):
+            return ChatMainArea(current_student, messages)
+        
+        # Full page load
+        content = SupervisorCommunicationPage(
+            active_tab=tab, 
+            students=students_data, 
+            current_student=current_student,
+            messages=messages
+        )
         
         return DashboardLayout(
             content,
