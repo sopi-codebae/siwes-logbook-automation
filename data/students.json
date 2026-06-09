@@ -1,6 +1,6 @@
 [
   {
-    "full_name": "John Doe",
+    "full_name": "Sopiribi Fenibo Owuna",
     "email": "john.doe@student.university.edu.ng",
     "matric_number": "U/23/CS/0045",
     "password": "password123",
@@ -9,15 +9,15 @@
     "is_active": true,
     "supervisor_email": "ada.williams@university.edu.ng",
     "placement": {
-      "company_name": "Tech Industries Ltd.",
-      "company_address": "15 Marina Road, Lagos",
+      "company_name": "Anchor University.",
+      "company_address": "1 ipaja, ayobo, Lagos",
       "supervisor_name": "Engr. Tunde Bakare",
       "supervisor_email": "tunde.bakare@techindustries.com",
       "supervisor_phone": "08012345678",
-      "start_date": "2026-01-05",
-      "end_date": "2026-06-26",
-      "latitude": 6.4549,
-      "longitude": 3.3947,
+      "start_date": "2026-06-05",
+      "end_date": "2026-12-26",
+      "latitude": 6.602023,
+      "longitude": 3.242526,
       "radius_meters": 500
     }
   },
